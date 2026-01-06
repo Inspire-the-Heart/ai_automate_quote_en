@@ -1,9 +1,8 @@
 name: Vionix Pipeline
 
 on:
-  push:
   schedule:
-    - cron: "30 3,5,12,14 * * *"
+    - cron: "0 2,7,13,16 * * *"
 
 concurrency:
   group: vionix-pipeline
