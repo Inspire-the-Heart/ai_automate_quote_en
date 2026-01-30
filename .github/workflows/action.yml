@@ -53,96 +53,97 @@ env:
   VIONIX_WHEEL_DIR: .vionix-wheel
 
 jobs:
-
-# -------------------------------------------------
-# 1️⃣ BUILD + INSTALL (ONCE)
-# -------------------------------------------------
-  build:
-    name: 🧱 Build Environment
+  run:
+    name: 🚀 Build & Run Vionix
     runs-on: ubuntu-latest
 
     steps:
+      # -------------------------------------------------
+      # Checkout
+      # -------------------------------------------------
       - uses: actions/checkout@v6
 
+      # -------------------------------------------------
+      # Python
+      # -------------------------------------------------
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
-      # 🔥 pip cache
+      # -------------------------------------------------
+      # pip cache
+      # -------------------------------------------------
       - name: Cache pip
         uses: actions/cache@v5
         with:
           path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+          key: pip-${{ runner.os }}-py311-${{ hashFiles('**/requirements.txt') }}
 
-      # 🔥 Vionix wheel cache (commit-based)
+      # -------------------------------------------------
+      # Vionix wheel cache (commit-based)
+      # -------------------------------------------------
       - name: Cache Vionix wheel
         uses: actions/cache@v5
         with:
           path: ${{ env.VIONIX_WHEEL_DIR }}
-          key: vionix-${{ secrets.RELEASE_TAG }}
+          key: vionix-${{ runner.os }}-py311-${{ secrets.RELEASE_TAG }}
 
+      # -------------------------------------------------
+      # Build tools
+      # -------------------------------------------------
       - name: Install build tools
-        run: python -m pip install --upgrade pip build
+        run: |
+          python -m pip install --upgrade pip build
 
-      - name: Build Vionix wheel (only if missing)
+      # -------------------------------------------------
+      # Build Vionix ONLY if missing
+      # -------------------------------------------------
+      - name: Build Vionix wheel (if needed)
         env:
           GH_PAT: ${{ secrets.GH_TOKEN }}
         run: |
           mkdir -p $VIONIX_WHEEL_DIR
           if ! ls $VIONIX_WHEEL_DIR/*.whl 1>/dev/null 2>&1; then
+            echo "🔨 Building Vionix wheel from commit ${{ secrets.RELEASE_TAG }}"
             pip wheel \
               git+https://x-access-token:${GH_PAT}@github.com/simplycodesmart/Vionix.git@${{ secrets.RELEASE_TAG }} \
               -w $VIONIX_WHEEL_DIR
+          else
+            echo "✅ Using cached Vionix wheel"
           fi
 
-      - name: Install deps (FAST)
+      # -------------------------------------------------
+      # Install deps (THIS FIXES ModuleNotFoundError)
+      # -------------------------------------------------
+      - name: Install dependencies
         run: |
           pip install $VIONIX_WHEEL_DIR/*.whl
           pip install -r requirements.txt --prefer-binary
 
+      # -------------------------------------------------
+      # FFmpeg
+      # -------------------------------------------------
       - name: Install FFmpeg
         uses: FedericoCarboni/setup-ffmpeg@v3
         with:
           ffmpeg-version: "6.1.0"
 
-      # 📦 Save workspace for next job
-      - name: Upload workspace
-        uses: actions/upload-artifact@v6
-        with:
-          name: vionix-workspace
-          path: .
-
-# -------------------------------------------------
-# 2️⃣ RUN
-# -------------------------------------------------
-  run:
-    name: 🚀 Run Pipeline
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Download workspace
-        uses: actions/download-artifact@v6
-        with:
-          name: vionix-workspace
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.11"
-
-      - name: Restore pip cache
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/pip
-          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
-
+      # -------------------------------------------------
+      # Auth files
+      # -------------------------------------------------
       - name: Create auth files
         run: |
           python - <<'EOF'
           import json, os
           json.dump(json.loads(os.environ["JSON_CLIENT_YT"]), open("client_secrets.json","w"))
           json.dump(json.loads(os.environ["JSON_OAUTH_YT"]), open("oauth.json","w"))
+          print("✅ Auth files created")
           EOF
+
+      # -------------------------------------------------
+      # Run app
+      # -------------------------------------------------
       - name: Execute main
-        run: python main.py 
+        run: |
+          python -c "import Vionix; print('✅ Vionix import OK')"
+          python main.py
