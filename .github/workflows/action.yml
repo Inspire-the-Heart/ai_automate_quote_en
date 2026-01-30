@@ -120,6 +120,11 @@ jobs:
           pip install $VIONIX_WHEEL_DIR/*.whl
           pip install -r requirements.txt --prefer-binary
 
+      - name: Check Vionix version
+        run: |
+          python -c "import Vionix; print('Vionix version:', Vionix.__version__)"
+          pip show Vionix
+
       # -------------------------------------------------
       # FFmpeg
       # -------------------------------------------------
