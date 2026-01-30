@@ -118,15 +118,9 @@ jobs:
         run: |
           pip install git+https://x-access-token:${GH_PAT}@github.com/simplycodesmart/Vionix.git@${PKG_COMMIT}
         
-        
-            - name: Cache private wheel
-              uses: actions/cache@v5
-              with:
-                path: ./*.whl
-                key: vionix-wheel-${{ secrets.RELEASE_TAG }}
-              
-            - name: Install requirements
-              run: pip install -r requirements.txt --prefer-binary
+          
+      - name: Install requirements
+        run: pip install -r requirements.txt --prefer-binary
 
 # -------------------------------------------------
 # 3️⃣ PREPARE
