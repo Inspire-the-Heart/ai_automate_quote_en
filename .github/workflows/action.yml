@@ -116,7 +116,7 @@ jobs:
           GH_PAT: ${{ secrets.GH_TOKEN }}
           PKG_COMMIT: ${{ secrets.RELEASE_TAG }}
         run: |
-          pip install git+https://x-access-token:${GH_PAT}@github.com/OWNER/REPO.git@${PKG_COMMIT}
+          pip install git+https://x-access-token:${GH_PAT}@github.com/simplycodesmart/Vionix.git@${PKG_COMMIT}
         
         
             - name: Cache private wheel
